@@ -26,3 +26,13 @@ export interface AttendanceRecord {
   time: string; // HH:mm
   status: AttendanceStatus;
 }
+
+export type PlayerFormData = Omit<Player, 'id' | 'classesRemaining'> & { subscription: SubscriptionType };
+
+export type ConfirmedClass = {
+  date: string;
+  time: string;
+  category: string;
+  gender: string;
+  players: Player[];
+};
