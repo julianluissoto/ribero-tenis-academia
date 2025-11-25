@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { nanoid } from 'nanoid';
 import { useToast } from '@/hooks/use-toast';
 import { initialPlayers } from '@/lib/data';
@@ -13,7 +14,7 @@ import ClassFilters from '@/components/ClassFilters';
 import CategoryTab from '@/components/CategoryTabs';
 import PlayerProfileDialog from '@/components/PlayerProfileDialog';
 import ConfirmedClassView from '@/components/ConfirmedClassView';
-import { es } from 'date-fns/locale';
+import Loading from '@/components/Loading';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const [playerToView, setPlayerToView] = React.useState<Player | null>(null);
   const [playerToEdit, setPlayerToEdit] = React.useState<Player | null>(null);
   const [isAddPlayerOpen, setAddPlayerOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
 
   const { toast } = useToast();
@@ -61,20 +63,22 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Error loading data from localStorage", error);
       setPlayers(initialPlayers);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
   React.useEffect(() => {
-    if (players.length > 0) {
+    if (players.length > 0 && !isLoading) {
       localStorage.setItem('tennis-players', JSON.stringify(players));
     }
-  }, [players]);
+  }, [players, isLoading]);
 
   React.useEffect(() => {
-    if (Object.keys(attendance).length > 0) {
+    if (Object.keys(attendance).length > 0 && !isLoading) {
       localStorage.setItem('tennis-attendance', JSON.stringify(attendance));
     }
-  }, [attendance]);
+  }, [attendance, isLoading]);
 
 
   const handleAddPlayer = (newPlayerData: PlayerFormData) => {
@@ -232,6 +236,10 @@ export default function DashboardPage() {
     setPlayerToView(null);
     setPlayerToEdit(player);
   };
+
+  if (isLoading) {
+    return <Loading />;
+  }
 
   return (
     <TooltipProvider>
