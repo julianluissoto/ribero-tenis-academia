@@ -1,5 +1,5 @@
-export type Category = "4to" | "3ro" | "2do";
-export const CATEGORIES: Category[] = ["4to", "3ro", "2do"];
+export type Category = "4ta" | "3ra" | "2da";
+export const CATEGORIES: Category[] = ["4ta", "3ra", "2da"];
 
 export type Gender = 'Masculino' | 'Femenino';
 export const GENDERS: Gender[] = ['Masculino', 'Femenino'];
