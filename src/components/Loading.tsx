@@ -15,7 +15,7 @@ export default function Loading() {
                         unoptimized
                     />
                 </div>
-                <span className="text-xl font-semibold text-primary">Cargando datos...</span>
+                <span className="text-xl font-semibold text-primary">Cargando Jugadores...</span>
             </div>
             <p className="mt-2 text-muted-foreground">¡Ribero Tenis Academy!</p>
         </div>
