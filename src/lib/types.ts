@@ -1,5 +1,5 @@
-export type Category = "4ta" | "3ra" | "2da";
-export const CATEGORIES: Category[] = ["4ta", "3ra", "2da"];
+export type Category = "4to" | "3ro" | "2do";
+export const CATEGORIES: Category[] = ["4to", "3ro", "2do"];
 
 export type Gender = 'Masculino' | 'Femenino';
 export const GENDERS: Gender[] = ['Masculino', 'Femenino'];
@@ -36,3 +36,37 @@ export type ConfirmedClass = {
   gender: string;
   players: Player[];
 };
+
+export interface SetScore {
+  score1: number | null;
+  score2: number | null;
+}
+
+export interface Match {
+  id: string;
+  player1: Player;
+  player2: Player;
+  sets: [SetScore, SetScore, SetScore];
+  winner?: 'player1' | 'player2' | null;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  players: Player[];
+  matches: Match[];
+}
+
+export interface Playoff {
+  semifinals: [Match, Match];
+  final: Match | null;
+}
+
+export interface Tournament {
+  id: string;
+  name: string;
+  category: Category;
+  players: Player[]; // All players in the tournament
+  groups: Group[];
+  playoff?: Playoff;
+}

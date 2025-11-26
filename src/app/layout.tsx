@@ -3,6 +3,7 @@ import { PT_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import AppTabs from '@/components/AppTabs';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -33,7 +34,7 @@ export default function RootLayout({
           ptSans.variable
         )}
       >
-        {children}
+        <AppTabs>{children}</AppTabs>
         <Toaster />
       </body>
     </html>
