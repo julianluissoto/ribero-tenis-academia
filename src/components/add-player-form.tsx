@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CATEGORIES, SUBSCRIPTION_TYPES, type Player, type SubscriptionType, GENDERS } from '@/lib/types';
+import { CATEGORIES, SUBSCRIPTION_TYPES, type Player, type PlayerFormData, GENDERS, SUBSCRIPTION_DETAILS } from '@/lib/types';
 
 
 const formSchema = z.object({
@@ -51,7 +51,6 @@ const formSchema = z.object({
   }),
 });
 
-type PlayerFormData = Omit<Player, 'id' | 'classesRemaining'> & { subscription: SubscriptionType };
 interface AddPlayerFormProps {
   onSubmit: (data: PlayerFormData, playerId?: string) => void;
   player?: Player | null;
@@ -66,7 +65,7 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
       telefono: player?.telefono || '',
       gender: player?.gender || 'Masculino',
       category: player?.category,
-      subscription: player?.subscription || 'none',
+      subscription: player?.subscription || 'per_class',
     },
   });
 
@@ -89,7 +88,7 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
       form.reset();
     }
   }
-  
+
   const isEditing = !!player;
 
   return (
@@ -182,7 +181,7 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
             </FormItem>
           )}
         />
-         <FormField
+        <FormField
           control={form.control}
           name="subscription"
           render={({ field }) => (
@@ -195,8 +194,11 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="none">Ninguna</SelectItem>
-                  <SelectItem value="monthly">Mensual (8 clases)</SelectItem>
+                  {SUBSCRIPTION_TYPES.map((subType) => (
+                    <SelectItem key={subType} value={subType}>
+                      {SUBSCRIPTION_DETAILS[subType].label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
