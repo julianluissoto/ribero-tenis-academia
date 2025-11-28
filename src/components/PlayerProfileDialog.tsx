@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Edit } from 'lucide-react';
 import type { Player } from '@/lib/types';
+import { SUBSCRIPTION_DETAILS } from '@/lib/types';
 
 interface PlayerProfileDialogProps {
     player: Player | null;
@@ -21,6 +22,9 @@ interface PlayerProfileDialogProps {
 
 export default function PlayerProfileDialog({ player, isOpen, onOpenChange, onEdit }: PlayerProfileDialogProps) {
     if (!player) return null;
+
+    const subscriptionDetail = SUBSCRIPTION_DETAILS[player.subscription];
+    const totalClasses = subscriptionDetail.classes;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -33,15 +37,15 @@ export default function PlayerProfileDialog({ player, isOpen, onOpenChange, onEd
                     <p><strong>Género:</strong> {player.gender}</p>
                     <p><strong>Categoría:</strong> {player.category}</p>
                     <p><strong>Teléfono:</strong> {player.telefono}</p>
-                    <p><strong>Suscripción:</strong> {player.subscription === 'monthly' ? 'Mensual' : 'Ninguna'}</p>
-                    {player.subscription === 'monthly' && (
+                    <p><strong>Suscripción:</strong> {subscriptionDetail.label}</p>
+                    {player.subscription !== 'per_class' && (
                         <div>
                             <p className="mb-2"><strong>Clases Consumidas:</strong></p>
                             <div className="space-y-1">
                                 <p className="text-sm text-muted-foreground">
-                                    {8 - player.classesRemaining} de 8 clases utilizadas
+                                    {totalClasses - player.classesRemaining} de {totalClasses} clases utilizadas
                                 </p>
-                                <Progress value={((8 - player.classesRemaining) / 8) * 100} />
+                                <Progress value={((totalClasses - player.classesRemaining) / totalClasses) * 100} />
                             </div>
                         </div>
                     )}

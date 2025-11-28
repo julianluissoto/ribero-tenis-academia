@@ -7,7 +7,7 @@ import { nanoid } from 'nanoid';
 import { useToast } from '@/hooks/use-toast';
 import { initialPlayers } from '@/lib/data';
 import type { Player, AttendanceRecord, PlayerFormData, ConfirmedClass } from '@/lib/types';
-import { GENDERS } from '@/lib/types';
+import { GENDERS, SUBSCRIPTION_DETAILS, SUBSCRIPTION_TYPES } from '@/lib/types';
 import AddPlayerForm from '@/components/add-player-form';
 import DashboardHeader from '@/components/DashboardHeader';
 import ClassFilters from '@/components/ClassFilters';
@@ -15,6 +15,8 @@ import CategoryTab from '@/components/CategoryTabs';
 import PlayerProfileDialog from '@/components/PlayerProfileDialog';
 import ConfirmedClassView from '@/components/ConfirmedClassView';
 import Loading from '@/components/Loading';
+import type { SubscriptionType } from "@/lib/types";
+
 import {
   Dialog,
   DialogContent,
@@ -24,7 +26,6 @@ import {
 } from '@/components/ui/dialog';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-
 
 const availableTimes = Array.from({ length: 15 }, (_, i) => `${i + 9}:00`);
 export const CLASS_CAPACITY = 8;
@@ -44,21 +45,47 @@ export default function DashboardPage() {
   const [isAddPlayerOpen, setAddPlayerOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
-
   const { toast } = useToast();
 
   React.useEffect(() => {
     try {
       const storedPlayers = localStorage.getItem('tennis-players');
-      if (storedPlayers) {
-        setPlayers(JSON.parse(storedPlayers));
-      } else {
-        setPlayers(initialPlayers);
-      }
+      let loadedPlayers: any[] = storedPlayers ? JSON.parse(storedPlayers) : initialPlayers;
+
+      // 🔥 SANEAR jugadores legacy sin subscription o con datos malformados
+      loadedPlayers = loadedPlayers.map((p: any) => {
+        // aseguramos que subscription sea uno de los permitidos
+        const sub: SubscriptionType = SUBSCRIPTION_TYPES.includes(p?.subscription)
+          ? p.subscription
+          : 'per_class';
+
+        const classesRemainingFromData = Number.isFinite(Number(p?.classesRemaining))
+          ? Number(p.classesRemaining)
+          : undefined;
+
+        return {
+          // garantizamos shape mínimo
+          id: p?.id ?? nanoid(),
+          name: p?.name ?? '',
+          surname: p?.surname ?? '',
+          telefono: p?.telefono ?? '',
+          category: p?.category ?? (typeof initialPlayers[0] !== 'undefined' ? initialPlayers[0].category : '4to'),
+          gender: p?.gender ?? (typeof initialPlayers[0] !== 'undefined' ? initialPlayers[0].gender : 'Masculino'),
+          subscription: sub,
+          classesRemaining: classesRemainingFromData ?? SUBSCRIPTION_DETAILS[sub].classes,
+        } as Player;
+      });
+
+      setPlayers(loadedPlayers);
 
       const storedAttendance = localStorage.getItem('tennis-attendance');
       if (storedAttendance) {
-        setAttendance(JSON.parse(storedAttendance));
+        try {
+          setAttendance(JSON.parse(storedAttendance));
+        } catch (err) {
+          console.error('Attendance parse error, ignoring stored attendance', err);
+          setAttendance({});
+        }
       }
     } catch (error) {
       console.error("Error loading data from localStorage", error);
@@ -80,12 +107,11 @@ export default function DashboardPage() {
     }
   }, [attendance, isLoading]);
 
-
   const handleAddPlayer = (newPlayerData: PlayerFormData) => {
     const newPlayer: Player = {
       ...newPlayerData,
       id: nanoid(),
-      classesRemaining: newPlayerData.subscription === 'monthly' ? 8 : 0,
+      classesRemaining: SUBSCRIPTION_DETAILS[newPlayerData.subscription].classes,
     };
     setPlayers((prev) => [...prev, newPlayer]);
     toast({
@@ -98,9 +124,11 @@ export default function DashboardPage() {
   const handleEditPlayer = (updatedPlayerData: PlayerFormData, playerId: string) => {
     setPlayers(prev => prev.map(p => {
       if (p.id === playerId) {
-        const classesRemaining = updatedPlayerData.subscription === 'monthly'
-          ? (p.subscription === 'monthly' ? p.classesRemaining : 8)
-          : 0;
+        let classesRemaining = p.classesRemaining;
+        // If subscription type changes, reset the class count
+        if (p.subscription !== updatedPlayerData.subscription) {
+          classesRemaining = SUBSCRIPTION_DETAILS[updatedPlayerData.subscription].classes;
+        }
         return { ...p, ...updatedPlayerData, classesRemaining };
       }
       return p;
@@ -145,6 +173,20 @@ export default function DashboardPage() {
       return;
     }
 
+    // Antes de actualizar attendance, verifico el player actual y permito per_class aún con 0 clasesRemaining
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const isPerClass = player.subscription === 'per_class';
+    if (!isPerClass && status === 'present' && player.classesRemaining <= 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Sin clases disponibles',
+        description: 'Este jugador ya no tiene clases disponibles.',
+      });
+      return;
+    }
+
     const newTimeSlotAttendance = [...timeSlotAttendance];
     const playerAttIndex = newTimeSlotAttendance.findIndex(
       (att) => att.playerId === playerId
@@ -171,13 +213,16 @@ export default function DashboardPage() {
       },
     }));
 
+    // Actualizo players: solo los que no son per_class afectan classesRemaining
     setPlayers(prevPlayers => prevPlayers.map(p => {
-      if (p.id === playerId && p.subscription === 'monthly') {
+      if (p.id === playerId && p.subscription !== 'per_class') {
+        const totalClasses = SUBSCRIPTION_DETAILS[p.subscription].classes;
         let newClassesRemaining = p.classesRemaining;
+
         if (previousStatus !== 'present' && status === 'present') {
           newClassesRemaining = Math.max(0, p.classesRemaining - 1);
         } else if (previousStatus === 'present' && status !== 'present') {
-          newClassesRemaining = Math.min(8, p.classesRemaining + 1);
+          newClassesRemaining = Math.min(totalClasses, p.classesRemaining + 1);
         }
         return { ...p, classesRemaining: newClassesRemaining };
       }
@@ -205,17 +250,22 @@ export default function DashboardPage() {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-    const csvRows = records.map(fullRecord => {
+    const csvRows = records.map((fullRecord: {
+      date: string;
+      player: Player;
+      record: AttendanceRecord;
+    }) => {
       const { date, player, record } = fullRecord;
       const dateObj = new Date(date + 'T00:00:00');
       const month = format(dateObj, 'MMMM yyyy', { locale: es });
+
       return [
         month,
         format(dateObj, 'yyyy-MM-dd'),
         player.gender,
         player.category,
         `${player.name} ${player.surname}`,
-        player.subscription === 'monthly' ? 'Si' : 'No',
+        SUBSCRIPTION_DETAILS[player.subscription as SubscriptionType].label,
         record.status === 'present' ? 'Si' : 'No'
       ].join(',');
     });
@@ -243,7 +293,7 @@ export default function DashboardPage() {
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <div className="flex w-full flex-col">
         <DashboardHeader
           onExportCSV={exportToCSV}
           onAddPlayer={() => setAddPlayerOpen(true)}

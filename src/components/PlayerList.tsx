@@ -94,7 +94,11 @@ export default function PlayerList({
                                         size="icon"
                                         className={cn('h-8 w-8', status === 'present' && 'bg-green-600 hover:bg-green-700')}
                                         onClick={() => onAttendanceChange(player.id, 'present')}
-                                        disabled={(status !== 'present' && confirmedCount >= CLASS_CAPACITY) || player.classesRemaining === 0}
+                                        disabled={
+                                            (status !== 'present' && confirmedCount >= CLASS_CAPACITY) ||
+                                            (player.subscription !== 'per_class' && player.classesRemaining === 0)
+                                        }
+
                                     >
                                         <CheckCircle2 className="h-4 w-4" />
                                     </Button>
