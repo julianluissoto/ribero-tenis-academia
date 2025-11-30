@@ -27,7 +27,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import type { Player, AttendanceRecord } from '@/lib/types';
 import { WhatsAppIcon } from '@/components/icons';
-import { CLASS_CAPACITY } from '@/app/page';
+import { CLASS_CAPACITY } from '@/lib/types';
 
 interface PlayerListProps {
     players: Player[];
@@ -122,7 +122,7 @@ export default function PlayerList({
                             </Tooltip>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onAttendanceChange(player.id, null)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onAttendanceChange(player.id, 'pending')}>
                                         <Undo2 className="h-4 w-4" />
                                     </Button>
                                 </TooltipTrigger>

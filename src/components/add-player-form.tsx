@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CATEGORIES, SUBSCRIPTION_TYPES, type Player, type PlayerFormData, GENDERS, SUBSCRIPTION_DETAILS } from '@/lib/types';
+import { ALL_CATEGORIES, FEMENINO_CATEGORIES, MASCULINO_CATEGORIES, SUBSCRIPTION_TYPES, type Player, type PlayerFormData, GENDERS, SUBSCRIPTION_DETAILS, Category } from '@/lib/types';
 
 
 const formSchema = z.object({
@@ -43,7 +43,7 @@ const formSchema = z.object({
   gender: z.enum(GENDERS, {
     required_error: 'Debes seleccionar un género.',
   }),
-  category: z.enum(CATEGORIES, {
+  category: z.enum(ALL_CATEGORIES, {
     required_error: 'Debes seleccionar una categoría.',
   }),
   subscription: z.enum(SUBSCRIPTION_TYPES, {
@@ -69,6 +69,13 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
     },
   });
 
+  const selectedGender = form.watch('gender');
+  const availableCategories: Category[] =
+    selectedGender === "Femenino"
+      ? [...FEMENINO_CATEGORIES]
+      : [...MASCULINO_CATEGORIES];
+
+
   React.useEffect(() => {
     if (player) {
       form.reset({
@@ -81,6 +88,17 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
       });
     }
   }, [player, form]);
+
+  React.useEffect(() => {
+    const currentCategory = form.getValues("category") as Category | undefined;
+
+    if (currentCategory && !availableCategories.includes(currentCategory)) {
+      form.setValue("category", "" as any, { shouldValidate: true });
+    }
+  }, [selectedGender, form, availableCategories]);
+
+
+
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     onSubmit(values, player?.id);
@@ -163,14 +181,14 @@ export default function AddPlayerForm({ onSubmit, player }: AddPlayerFormProps) 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoría</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {CATEGORIES.map((category) => (
+                  {availableCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       Categoría {category}
                     </SelectItem>

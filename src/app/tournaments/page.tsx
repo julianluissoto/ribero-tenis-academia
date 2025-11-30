@@ -46,7 +46,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-import { CATEGORIES } from '@/lib/types';
+import { ALL_CATEGORIES } from '@/lib/types';
 import type { Player, Category, Tournament, Match, SetScore, Playoff, Group } from '@/lib/types';
 
 interface Standings {
@@ -583,7 +583,7 @@ export default function TournamentsPage() {
                       <SelectValue placeholder="Selecciona una categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map((cat) => (
+                      {ALL_CATEGORIES.map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           Categoría {cat}
                         </SelectItem>
