@@ -66,13 +66,13 @@ export interface AttendanceRecord {
 }
 
 // ------------------------------------------------------
-// Torneos
+// Torneos y Clases
 // ------------------------------------------------------
 export type ConfirmedClass = {
   date: string;
   time: string;
-  category: Category;
-  gender: Gender;
+  categories: string[];
+  gender: Gender | string;
   players: Player[];
 };
 

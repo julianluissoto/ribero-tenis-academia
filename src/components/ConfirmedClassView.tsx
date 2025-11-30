@@ -67,7 +67,7 @@ export default function ConfirmedClassView({ confirmedClass }: ConfirmedClassVie
           Clase Confirmada - {confirmedClass.date} a las {confirmedClass.time}
         </CardTitle>
         <CardDescription>
-          {confirmedClass.gender} - Categoría {confirmedClass.category}
+          {confirmedClass.gender} - Categorías: {confirmedClass.categories.join(', ')}
         </CardDescription>
       </CardHeader>
       <CardContent>

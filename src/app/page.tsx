@@ -31,7 +31,6 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 
-// ✅ Ahora importamos capacity desde lib/constants
 import { CLASS_CAPACITY } from '@/lib/types';
 
 const availableTimes = Array.from({ length: 15 }, (_, i) => `${i + 9}:00`);
@@ -251,6 +250,70 @@ export default function DashboardPage() {
   };
 
   // ------------------------
+  // CONFIRM CLASS
+  // ------------------------
+  const handleConfirmClass = () => {
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
+    const timeKey = selectedTime;
+    const todaysAttendance = attendance[dateKey]?.[timeKey] ?? [];
+
+    const confirmedPlayers = players.filter((player) =>
+      todaysAttendance.some(
+        (att) => att.playerId === player.id && att.status === "present"
+      )
+    );
+
+    if (confirmedPlayers.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No hay jugadores",
+        description: "No hay jugadores confirmados para esta clase.",
+      });
+      return;
+    }
+
+    const categoriesInClass: Record<string, Player[]> = {};
+    confirmedPlayers.forEach(p => {
+      if (!categoriesInClass[p.category]) {
+        categoriesInClass[p.category] = [];
+      }
+      categoriesInClass[p.category].push(p);
+    });
+
+    const categoryNames = Object.keys(categoriesInClass);
+
+    if (categoryNames.length > 2) {
+      toast({
+        variant: "destructive",
+        title: "Demasiadas categorías",
+        description: "No se pueden mezclar más de 2 categorías en el mismo horario.",
+      });
+      return;
+    }
+
+    if (categoryNames.length === 2) {
+      const countCat1 = categoriesInClass[categoryNames[0]].length;
+      const countCat2 = categoriesInClass[categoryNames[1]].length;
+      if (countCat1 !== 4 && countCat2 !== 4) {
+        toast({
+          variant: "destructive",
+          title: "Canchas no completas",
+          description: "Para usar 2 categorías, una debe tener 4 jugadores (cancha llena).",
+        });
+        return;
+      }
+    }
+
+    setConfirmedClass({
+      date: format(selectedDate, 'PPP', { locale: es }),
+      time: timeKey,
+      categories: categoryNames,
+      gender: selectedGender,
+      players: confirmedPlayers,
+    });
+  }
+
+  // ------------------------
   //     EXPORT CSV
   // ------------------------
   const exportToCSV = () => {
@@ -325,6 +388,7 @@ export default function DashboardPage() {
                 setConfirmedClass(null);
               }}
               availableTimes={availableTimes}
+              onConfirmClass={handleConfirmClass}
             />
 
             {GENDERS.map((gender) => (
@@ -336,7 +400,6 @@ export default function DashboardPage() {
                   selectedDate={selectedDate}
                   selectedTime={selectedTime}
                   onAttendanceChange={handleAttendanceChange}
-                  onConfirmSchedule={setConfirmedClass}
                   onDeletePlayer={handleDeletePlayer}
                   onViewPlayer={setPlayerToView}
                 />

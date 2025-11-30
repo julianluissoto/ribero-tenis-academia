@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,16 +9,15 @@ import { Progress } from '@/components/ui/progress';
 import { Users } from 'lucide-react';
 
 
-import { MASCULINO_CATEGORIES, FEMENINO_CATEGORIES, ALL_CATEGORIES } from '@/lib/types';
+import { MASCULINO_CATEGORIES, FEMENINO_CATEGORIES } from '@/lib/types';
 
-import { Category } from '@/lib/types';
-import { CLASS_CAPACITY, COURT_CAPACITY, TOTAL_COURTS } from '@/lib/types';
+import { COURT_CAPACITY, TOTAL_COURTS } from '@/lib/types';
 
 
 
 import PlayerList from './PlayerList';
 
-import type { Player, AttendanceRecord, ConfirmedClass, Gender } from '@/lib/types';
+import type { Player, AttendanceRecord, Gender } from '@/lib/types';
 
 interface CategoryTabProps {
     gender: Gender;
@@ -28,7 +26,6 @@ interface CategoryTabProps {
     selectedDate: Date;
     selectedTime: string;
     onAttendanceChange: (playerId: string, status: AttendanceRecord['status']) => void;
-    onConfirmSchedule: (classInfo: ConfirmedClass | null) => void;
     onDeletePlayer: (playerId: string) => void;
     onViewPlayer: (player: Player) => void;
 }
@@ -41,34 +38,12 @@ export default function CategoryTab({
     selectedDate,
     selectedTime,
     onAttendanceChange,
-    onConfirmSchedule,
     onDeletePlayer,
     onViewPlayer,
 }: CategoryTabProps) {
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     const timeKey = selectedTime;
     const genderCategories = gender === 'Femenino' ? FEMENINO_CATEGORIES : MASCULINO_CATEGORIES;
-
-    const handleConfirmSchedule = (category: Category) => {
-        const todaysAttendance = attendance[dateKey]?.[timeKey] ?? [];
-        const categoryPlayers = players.filter((p) => p.category === category);
-
-        const confirmedPlayers = categoryPlayers.filter((player) =>
-            todaysAttendance.some(
-                (att) => att.playerId === player.id && att.status === "present"
-            )
-        );
-
-        onConfirmSchedule({
-            date: format(selectedDate, 'PPP', { locale: es }),
-            time: timeKey,
-            category,
-            gender,          // 👈 aquí gender DEBE ser type Gender
-            players: confirmedPlayers,
-        });
-    };
-
-
 
     return (
         <Tabs defaultValue={genderCategories[0]}>
@@ -82,10 +57,12 @@ export default function CategoryTab({
             {genderCategories.map((category) => {
                 const categoryPlayers = players.filter((p) => p.category === category);
                 const todaysAttendance = attendance[dateKey]?.[timeKey] ?? [];
-                const confirmedPlayers = categoryPlayers.filter((player) =>
-                    todaysAttendance.some((att) => att.playerId === player.id && att.status === 'present')
+
+                const allConfirmedPlayersForTime = players.filter(p =>
+                    todaysAttendance.some(att => att.playerId === p.id && att.status === 'present')
                 );
-                const confirmedCount = confirmedPlayers.length;
+                const confirmedCount = allConfirmedPlayersForTime.length;
+
 
                 return (
                     <TabsContent key={category} value={category}>
@@ -114,18 +91,17 @@ export default function CategoryTab({
                             <div className="w-full space-y-4 md:col-span-2 lg:col-span-3">
                                 <Card>
                                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                        <CardTitle className="text-base font-medium">Asistentes Confirmados</CardTitle>
+                                        <CardTitle className="text-base font-medium">Asistentes Confirmados (Total)</CardTitle>
                                         <Users className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
                                         <div className="text-2xl font-bold">
-                                            {confirmedCount} / {CLASS_CAPACITY}
+                                            {confirmedCount} / {COURT_CAPACITY * TOTAL_COURTS}
                                         </div>
                                         <p className="text-xs text-muted-foreground mb-4">Capacidad total de la clase</p>
 
                                         {Array.from({ length: TOTAL_COURTS }).map((_, courtIndex) => {
                                             const start = courtIndex * COURT_CAPACITY;
-                                            const end = start + COURT_CAPACITY;
                                             const courtPlayers = Math.max(0, Math.min(COURT_CAPACITY, confirmedCount - start));
 
                                             return (
@@ -135,14 +111,6 @@ export default function CategoryTab({
                                                 </div>
                                             );
                                         })}
-
-                                        <Button
-                                            className="mt-4 w-full"
-                                            onClick={() => handleConfirmSchedule(category)}
-                                            disabled={confirmedPlayers.length === 0}
-                                        >
-                                            Confirmar Horario
-                                        </Button>
                                     </CardContent>
                                 </Card>
                             </div>

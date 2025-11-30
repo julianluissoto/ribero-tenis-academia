@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,6 +18,7 @@ interface ClassFiltersProps {
     selectedTime: string;
     onTimeChange: (time: string) => void;
     availableTimes: string[];
+    onConfirmClass: () => void;
 }
 
 export default function ClassFilters({
@@ -25,7 +26,8 @@ export default function ClassFilters({
     onDateChange,
     selectedTime,
     onTimeChange,
-    availableTimes
+    availableTimes,
+    onConfirmClass
 }: ClassFiltersProps) {
     return (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -73,6 +75,10 @@ export default function ClassFilters({
                         ))}
                     </SelectContent>
                 </Select>
+                <Button onClick={onConfirmClass} className="w-full sm:w-auto">
+                    <CheckCheck className="mr-2 h-4 w-4" />
+                    Confirmar Clase
+                </Button>
             </div>
         </div>
     );
