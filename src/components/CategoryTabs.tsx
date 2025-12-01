@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Users } from 'lucide-react';
 
@@ -63,6 +62,17 @@ export default function CategoryTab({
                 );
                 const confirmedCount = allConfirmedPlayersForTime.length;
 
+                const confirmedPlayersByCategory: Record<string, Player[]> = {};
+                allConfirmedPlayersForTime.forEach(p => {
+                    if (!confirmedPlayersByCategory[p.category]) {
+                        confirmedPlayersByCategory[p.category] = [];
+                    }
+                    confirmedPlayersByCategory[p.category].push(p);
+                });
+
+                const categoriesInClass = Object.keys(confirmedPlayersByCategory);
+                const courtAssignments = categoriesInClass.slice(0, TOTAL_COURTS);
+
 
                 return (
                     <TabsContent key={category} value={category}>
@@ -101,13 +111,21 @@ export default function CategoryTab({
                                         <p className="text-xs text-muted-foreground mb-4">Capacidad total de la clase</p>
 
                                         {Array.from({ length: TOTAL_COURTS }).map((_, courtIndex) => {
-                                            const start = courtIndex * COURT_CAPACITY;
-                                            const courtPlayers = Math.max(0, Math.min(COURT_CAPACITY, confirmedCount - start));
+                                            const categoryOnCourt = courtAssignments[courtIndex];
+                                            const playersOnCourt = categoryOnCourt ? confirmedPlayersByCategory[categoryOnCourt].length : 0;
+                                            const courtIsAssigned = !!categoryOnCourt;
 
                                             return (
                                                 <div key={courtIndex} className="mb-3">
-                                                    <p className="text-sm font-medium">Cancha {courtIndex + 1}: {courtPlayers} / {COURT_CAPACITY}</p>
-                                                    <Progress value={(courtPlayers / COURT_CAPACITY) * 100} className="mt-1 h-2" />
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-sm font-medium">Cancha {courtIndex + 1}: {playersOnCourt} / {COURT_CAPACITY}</p>
+                                                        {courtIsAssigned && (
+                                                            <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                                                Cat. {categoryOnCourt}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <Progress value={(playersOnCourt / COURT_CAPACITY) * 100} className="mt-1 h-2" />
                                                 </div>
                                             );
                                         })}

@@ -8,7 +8,7 @@ interface ConfirmedClassViewProps {
   confirmedClass: ConfirmedClass;
 }
 
-const Court = ({ players, courtNumber }: { players: Player[]; courtNumber: number }) => {
+const Court = ({ players, courtNumber, category }: { players: Player[]; courtNumber: number; category?: string }) => {
   if (players.length === 0) return null;
 
   const side1Players = players.slice(0, Math.ceil(players.length / 2));
@@ -17,6 +17,7 @@ const Court = ({ players, courtNumber }: { players: Player[]; courtNumber: numbe
   return (
     <div className="flex flex-col items-center gap-2">
       <h3 className="font-bold">Cancha {courtNumber}</h3>
+      {category && <p className="text-sm text-muted-foreground -mt-2">Categoría: {category}</p>}
       <div className="relative mx-auto aspect-[1/2] w-full max-w-sm rounded-lg border-4 border-[#6b8e23] bg-[#a0d468] p-4">
         {/* Líneas de la cancha */}
         <div className="absolute left-0 top-1/2 w-full h-1 -mt-0.5 bg-white/50"></div>
@@ -57,8 +58,27 @@ const Court = ({ players, courtNumber }: { players: Player[]; courtNumber: numbe
 }
 
 export default function ConfirmedClassView({ confirmedClass }: ConfirmedClassViewProps) {
-  const court1Players = confirmedClass.players.slice(0, COURT_CAPACITY);
-  const court2Players = confirmedClass.players.slice(COURT_CAPACITY, COURT_CAPACITY * 2);
+  const playersByCategory: Record<string, Player[]> = {};
+
+  confirmedClass.players.forEach(p => {
+    if (!playersByCategory[p.category]) {
+      playersByCategory[p.category] = [];
+    }
+    playersByCategory[p.category].push(p);
+  });
+
+  const categories = Object.keys(playersByCategory);
+  const category1 = categories[0];
+  const category2 = categories[1];
+
+  const court1Players = category1 ? playersByCategory[category1] : [];
+  const court2Players = category2 ? playersByCategory[category2] : [];
+
+  // En caso de que solo haya una categoría con más de 4 jugadores
+  if (categories.length === 1 && court1Players.length > COURT_CAPACITY) {
+    court2Players.push(...court1Players.splice(COURT_CAPACITY));
+  }
+
 
   return (
     <Card className="mt-6">
@@ -72,8 +92,8 @@ export default function ConfirmedClassView({ confirmedClass }: ConfirmedClassVie
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-          <Court players={court1Players} courtNumber={1} />
-          <Court players={court2Players} courtNumber={2} />
+          <Court players={court1Players} courtNumber={1} category={category1} />
+          <Court players={court2Players} courtNumber={2} category={category2 ?? category1} />
         </div>
       </CardContent>
     </Card>
